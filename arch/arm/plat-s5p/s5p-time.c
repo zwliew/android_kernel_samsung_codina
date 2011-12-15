@@ -10,7 +10,6 @@
  * published by the Free Software Foundation.
 */
 
-#include <linux/sched.h>
 #include <linux/interrupt.h>
 #include <linux/irq.h>
 #include <linux/err.h>
@@ -328,26 +327,14 @@ static cycle_t s5p_timer_read(struct clocksource *cs)
  * this wraps around for now, since it is just a relative time
  * stamp. (Inspired by U300 implementation.)
  */
-static DEFINE_CLOCK_DATA(cd);
-
-unsigned long long notrace sched_clock(void)
+static u32 notrace s5p_read_sched_clock(void)
 {
 	void __iomem *reg = s5p_timer_reg();
 
 	if (!reg)
 		return 0;
 
-	return cyc_to_sched_clock(&cd, ~__raw_readl(reg), (u32)~0);
-}
-
-static void notrace s5p_update_sched_clock(void)
-{
-	void __iomem *reg = s5p_timer_reg();
-
-	if (!reg)
-		return;
-
-	update_sched_clock(&cd, ~__raw_readl(reg), (u32)~0);
+	return ~__raw_readl(reg);
 }
 
 struct clocksource time_clocksource = {
@@ -373,7 +360,7 @@ static void __init s5p_clocksource_init(void)
 	s5p_time_setup(timer_source.source_id, TCNT_MAX);
 	s5p_time_start(timer_source.source_id, PERIODIC);
 
-	init_sched_clock(&cd, s5p_update_sched_clock, 32, clock_rate);
+	setup_sched_clock(s5p_read_sched_clock, 32, clock_rate);
 
 	if (clocksource_register_hz(&time_clocksource, clock_rate))
 		panic("%s: can't register clocksource\n", time_clocksource.name);
