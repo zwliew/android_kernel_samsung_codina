@@ -20,7 +20,7 @@ extern void machine_power_off_smp(void);
 
 extern int __cpu_disable (void);
 extern void __cpu_die (unsigned int cpu);
-extern int __cpu_up (unsigned int cpu);
+extern int __cpu_up(unsigned int cpu, struct task_struct *tidle);
 
 extern struct mutex smp_cpu_state_mutex;
 extern int smp_cpu_polarization[];
