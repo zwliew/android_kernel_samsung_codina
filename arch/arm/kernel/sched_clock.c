@@ -10,6 +10,7 @@
 #include <linux/jiffies.h>
 #include <linux/ktime.h>
 #include <linux/kernel.h>
+#include <linux/moduleparam.h>
 #include <linux/sched.h>
 #include <linux/syscore_ops.h>
 #include <linux/hrtimer.h>
@@ -30,6 +31,9 @@ struct clock_data {
 };
 
 static struct hrtimer sched_clock_timer;
+static int irqtime = -1;
+
+core_param(irqtime, irqtime, int, 0400);
 
 static struct clock_data cd = {
 	.mult	= NSEC_PER_SEC / HZ,
@@ -165,6 +169,10 @@ void __init sched_clock_register(u64 (*read)(void), int bits,
 
 	pr_info("sched_clock: %u bits at %lu%cHz, resolution %lluns, wraps every %lluns\n",
 		bits, r, r_unit, res, wrap);
+
+	/* Enable IRQ time accounting if we have a fast enough sched_clock */
+	if (irqtime > 0 || (irqtime == -1 && rate >= 1000000))
+		enable_sched_clock_irqtime();
 
 	pr_debug("Registered %pF as sched_clock source\n", read);
 }
