@@ -779,7 +779,7 @@ static int ab8500_usb_set_peripheral(struct otg_transceiver *otg,
 	 * Do not update ab8500 registers directly till this
 	 * is fixed.
 	 */
-	if (!gadget)
+	if (!gadget && ab->mode == USB_PERIPHERAL)
 		schedule_work(&ab->phy_dis_work);
 
 	return 0;
@@ -801,7 +801,7 @@ static int ab8500_usb_set_host(struct otg_transceiver *otg,
 	 * Do not update ab8500 registers directly till this
 	 * is fixed.
 	 */
-	if (!host)
+	if (!host && ab->mode == USB_HOST)
 		schedule_work(&ab->phy_dis_work);
 
 	return 0;

@@ -424,6 +424,10 @@ static int adb_open(struct inode *ip, struct file *fp)
 static int adb_release(struct inode *ip, struct file *fp)
 {
 	printk(KERN_INFO "adb_release\n");
+
+	if (!_adb_dev)
+		return -ENODEV;
+
 	adb_unlock(&_adb_dev->open_excl);
 	return 0;
 }
