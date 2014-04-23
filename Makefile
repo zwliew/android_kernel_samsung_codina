@@ -391,7 +391,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-delete-null-pointer-checks \
 		   -march=armv7-a \
 		   -mfpu=neon \
-		   -mtune=cortex-a9 -Wno-unused-variable -Wno-sizeof-pointer-memaccess
+		   -mtune=cortex-a9 -Wno-unused-variable
 ifdef CONFIG_CC_OPTIMIZE_ALOT
 KBUILD_AFLAGS_KERNEL := -O3 -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -fsingle-precision-constant -mtune=cortex-a9 -marm -march=armv7-a -mfpu=neon -ftree-vectorize -mvectorize-with-neon-double
 KBUILD_CFLAGS_KERNEL := -O3 -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -fsingle-precision-constant -mtune=cortex-a9 -marm -march=armv7-a -mfpu=neon -ftree-vectorize -mvectorize-with-neon-double
