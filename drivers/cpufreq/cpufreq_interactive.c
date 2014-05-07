@@ -137,9 +137,12 @@ static bool io_is_busy;
  * up_threshold_any_cpu_freq then do not let the frequency to drop below
  * sync_freq
  */
-static unsigned int up_threshold_any_cpu_load;
-static unsigned int sync_freq;
-static unsigned int up_threshold_any_cpu_freq;
+#define DEFAULT_UP_THRESHOLD_ANY_CPU_LOAD 70
+static unsigned int up_threshold_any_cpu_load = DEFAULT_UP_THRESHOLD_ANY_CPU_LOAD;
+#define DEFAULT_SYNC_FREQ 600000
+static unsigned int sync_freq = DEFAULT_SYNC_FREQ;
+#define DEFAULT_UP_THRESHOLD_ANY_CPU_FREQ 800000
+static unsigned int up_threshold_any_cpu_freq = DEFAULT_UP_THRESHOLD_ANY_CPU_FREQ;
 
 static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		unsigned int event);
@@ -429,11 +432,17 @@ static void cpufreq_interactive_timer(unsigned long data)
 	pcpu->prev_load = cpu_load;
 	boosted = now < (last_input_time + boostpulse_duration_val);
 
-	if (cpu_load >= go_hispeed_load) {
-		new_freq = choose_freq(pcpu, loadadjfreq);
-
-		if (new_freq < hispeed_freq)
+	if (cpu_load >= go_hispeed_load)
+	{
+		if (pcpu->target_freq < hispeed_freq)
 			new_freq = hispeed_freq;
+		else
+		{
+			new_freq = choose_freq(pcpu, loadadjfreq);
+
+			if (new_freq < hispeed_freq)
+				new_freq = hispeed_freq;
+		}
 	} else {
 		new_freq = choose_freq(pcpu, loadadjfreq);
 		if (sync_freq && new_freq < sync_freq) {
@@ -460,7 +469,8 @@ static void cpufreq_interactive_timer(unsigned long data)
 
 	if (boosted)
 	{
-		new_freq = input_boost_freq;
+		if (new_freq < input_boost_freq)
+			new_freq = input_boost_freq;
 	}
 
 	if (pcpu->target_freq >= hispeed_freq &&
