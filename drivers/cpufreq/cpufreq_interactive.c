@@ -113,8 +113,8 @@ static spinlock_t above_hispeed_delay_lock;
 static unsigned int *above_hispeed_delay = default_above_hispeed_delay;
 static int nabove_hispeed_delay = ARRAY_SIZE(default_above_hispeed_delay);
 
-/* 350ms - 0.35s */
-#define DEFAULT_BOOSTPULSE_DURATION 350000
+/* 2000ms - 0.2s */
+#define DEFAULT_BOOSTPULSE_DURATION 200000
 /* Duration of a boot pulse in usecs */
 static int boostpulse_duration_val = DEFAULT_BOOSTPULSE_DURATION;
 
@@ -122,7 +122,7 @@ static int boostpulse_duration_val = DEFAULT_BOOSTPULSE_DURATION;
  * The CPU will be boosted to this frequency when the screen is
  * touched. input_boost needs to be enabled.
  */
-#define DEFAULT_INPUT_BOOST_FREQ 800000
+#define DEFAULT_INPUT_BOOST_FREQ 600000
 static int input_boost_freq = DEFAULT_INPUT_BOOST_FREQ;
 extern u64 last_input_time;
 
@@ -133,7 +133,7 @@ extern u64 last_input_time;
 #define DEFAULT_TIMER_SLACK (70000)
 static int timer_slack_val = DEFAULT_TIMER_SLACK;
 
-static bool io_is_busy = false;
+static bool io_is_busy = true;
 
 #define DEFAULT_SYNC_FREQ 400000
 
