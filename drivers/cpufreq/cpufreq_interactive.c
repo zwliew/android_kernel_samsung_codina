@@ -78,7 +78,8 @@ static unsigned int hispeed_freq = 400000;
 static unsigned long go_hispeed_load = DEFAULT_GO_HISPEED_LOAD;
 
 /* Sampling down factor to be applied to min_sample_time at max freq */
-static unsigned int sampling_down_factor;
+#define DEFAULT_SAMPLING_DOWN_FACTOR 60000
+static unsigned int sampling_down_factor = 60000;
 
 /* Target load.  Lower values result in higher CPU speeds. */
 #define DEFAULT_TARGET_LOAD 90
@@ -113,8 +114,8 @@ static spinlock_t above_hispeed_delay_lock;
 static unsigned int *above_hispeed_delay = default_above_hispeed_delay;
 static int nabove_hispeed_delay = ARRAY_SIZE(default_above_hispeed_delay);
 
-/* 2000ms - 0.2s */
-#define DEFAULT_BOOSTPULSE_DURATION 200000
+/* 250ms - 0.25s */
+#define DEFAULT_BOOSTPULSE_DURATION 250000
 /* Duration of a boot pulse in usecs */
 static int boostpulse_duration_val = DEFAULT_BOOSTPULSE_DURATION;
 
@@ -130,7 +131,7 @@ extern u64 last_input_time;
  * Max additional time to wait in idle, beyond timer_rate, at speeds above
  * minimum before wakeup to reduce speed, or -1 if unnecessary.
  */
-#define DEFAULT_TIMER_SLACK (70000)
+#define DEFAULT_TIMER_SLACK DEFAULT_TIMER_RATE
 static int timer_slack_val = DEFAULT_TIMER_SLACK;
 
 static bool io_is_busy = true;
@@ -143,7 +144,7 @@ static bool io_is_busy = true;
  * up_threshold_any_cpu_freq then do not let the frequency to drop below
  * sync_freq
  */
-static unsigned int up_threshold_any_cpu_load = 50;
+static unsigned int up_threshold_any_cpu_load = 65;
 static unsigned int sync_freq = DEFAULT_SYNC_FREQ;
 static unsigned int up_threshold_any_cpu_freq = 600000;
 
