@@ -165,7 +165,6 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
 static struct early_suspend cpufreq_gov_early_suspend;
-static unsigned int cpufreq_gov_lcd_status_interactive;
 #endif
 
 #ifndef CONFIG_CPU_FREQ_DEFAULT_GOV_INTERACTIVE
@@ -754,21 +753,6 @@ static int cpufreq_interactive_speedchange_task(void *data)
 				if (pjcpu->target_freq > max_freq)
 					max_freq = pjcpu->target_freq;
 			}
-
-#ifdef CONFIG_HAS_EARLYSUSPEND
-			/* should we enable auxillary CPUs? */
-			/* only master CPU is alive and Screen is ON */
-			if (num_online_cpus() < 2 && cpufreq_gov_lcd_status_interactive == 1) {
-				/* hot-plug enable 2nd CPU */
-				cpu_up(1);
-				printk("Interactive - Screen ON Hot-plug!\n");
-			/* Both CPUs are up and Screen is OFF */
-			} else if (num_online_cpus() > 1 && cpufreq_gov_lcd_status_interactive == 0) {
-				/* hot-unplug 2nd CPU */
-				cpu_down(1);
-				printk("Interactive - Screen OFF Hot-unplug!\n");
-			}
-#endif
 
 			if (max_freq != pcpu->policy->cur)
 				__cpufreq_driver_target(pcpu->policy,
@@ -1476,12 +1460,14 @@ static void cpufreq_interactive_nop_timer(unsigned long data)
 #ifdef CONFIG_HAS_EARLYSUSPEND
 static void cpufreq_gov_suspend(struct early_suspend *h)
 {
-	cpufreq_gov_lcd_status_interactive = 0;
+	cpu_down(1);
+	printk("[interactive] screen off hot-unplug!\n");
 }
 
 static void cpufreq_gov_resume(struct early_suspend *h)
 {
-	cpufreq_gov_lcd_status_interactive = 1;
+	cpu_up(1);
+	printk("[interactive] screen on hot-plug!\n");
 }
 #endif
 
@@ -1518,8 +1504,6 @@ static int __init cpufreq_interactive_init(void)
 	get_task_struct(speedchange_task);
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
-	cpufreq_gov_lcd_status_interactive = 1;
-
 	cpufreq_gov_early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 25;
 
 	cpufreq_gov_early_suspend.suspend = cpufreq_gov_suspend;
