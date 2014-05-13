@@ -86,7 +86,8 @@ static unsigned int sampling_down_factor = 60000;
 
 /* Target load.  Lower values result in higher CPU speeds. */
 #define DEFAULT_TARGET_LOAD 90
-static unsigned int default_target_loads[] = {DEFAULT_TARGET_LOAD};
+static unsigned int default_target_loads[] = {
+	DEFAULT_TARGET_LOAD };
 static spinlock_t target_loads_lock;
 static unsigned int *target_loads = default_target_loads;
 static int ntarget_loads = ARRAY_SIZE(default_target_loads);
@@ -95,7 +96,8 @@ static int ntarget_loads = ARRAY_SIZE(default_target_loads);
  * The minimum amount of time to spend at a frequency before we can ramp down.
  */
 #define DEFAULT_MIN_SAMPLE_TIME (40 * USEC_PER_MSEC)
-static unsigned int default_min_sample_time[] = {DEFAULT_MIN_SAMPLE_TIME};
+static unsigned int default_min_sample_time[] = {
+	DEFAULT_MIN_SAMPLE_TIME };
 static spinlock_t min_sample_time_lock;
 static unsigned int *min_sample_times = default_min_sample_time;
 static int nmin_sample_times = ARRAY_SIZE(default_min_sample_time);
@@ -104,7 +106,8 @@ static int nmin_sample_times = ARRAY_SIZE(default_min_sample_time);
  * The sample rate of the timer used to increase frequency
  */
 #define DEFAULT_TIMER_RATE (30 * USEC_PER_MSEC)
-static unsigned int default_timer_rate[] = { DEFAULT_TIMER_RATE };
+static unsigned int default_timer_rate[] = {
+	DEFAULT_TIMER_RATE };
 static spinlock_t timer_rate_lock;
 static unsigned int *timer_rates = default_timer_rate;
 static int ntimer_rates = ARRAY_SIZE(default_timer_rate);
@@ -140,8 +143,9 @@ extern u64 last_input_time;
  * Max additional time to wait in idle, beyond timer_rate, at speeds above
  * minimum before wakeup to reduce speed, or -1 if unnecessary.
  */
-#define DEFAULT_TIMER_SLACK (30000)
-static int default_timer_slack_val[] = { DEFAULT_TIMER_SLACK };
+#define DEFAULT_TIMER_SLACK DEFAULT_TIMER_RATE
+static int default_timer_slack_val[] = {
+	DEFAULT_TIMER_SLACK };
 static spinlock_t timer_slack_lock;
 static int *timer_slack_vals = default_timer_slack_val;
 static int ntimer_slack_vals = ARRAY_SIZE(default_timer_slack_val);
@@ -160,22 +164,9 @@ static unsigned int up_threshold_any_cpu_load = 65;
 static unsigned int sync_freq = DEFAULT_SYNC_FREQ;
 static unsigned int up_threshold_any_cpu_freq = 600000;
 
-static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
-		unsigned int event);
-
 #ifdef CONFIG_HAS_EARLYSUSPEND
 static struct early_suspend cpufreq_gov_early_suspend;
 #endif
-
-#ifndef CONFIG_CPU_FREQ_DEFAULT_GOV_INTERACTIVE
-static
-#endif
-struct cpufreq_governor cpufreq_gov_interactive = {
-	.name = "interactive",
-	.governor = cpufreq_governor_interactive,
-	.max_transition_latency = 10000000,
-	.owner = THIS_MODULE,
-};
 
 static inline cputime64_t get_cpu_idle_time_jiffy(unsigned int cpu,
 						  cputime64_t *wall)
@@ -1452,6 +1443,16 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 	}
 	return 0;
 }
+
+#ifndef CONFIG_CPU_FREQ_DEFAULT_GOV_INTERACTIVE
+static
+#endif
+struct cpufreq_governor cpufreq_gov_interactive = {
+	.name = "interactive",
+	.governor = cpufreq_governor_interactive,
+	.max_transition_latency = 10000000,
+	.owner = THIS_MODULE,
+};
 
 static void cpufreq_interactive_nop_timer(unsigned long data)
 {
