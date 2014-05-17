@@ -1505,7 +1505,7 @@ static int __init cpufreq_interactive_init(void)
 	get_task_struct(speedchange_task);
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
-	cpufreq_gov_early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 25;
+	cpufreq_gov_early_suspend.level = EARLY_SUSPEND_LEVEL_DISABLE_FB + 2;
 
 	cpufreq_gov_early_suspend.suspend = cpufreq_gov_suspend;
 	cpufreq_gov_early_suspend.resume = cpufreq_gov_resume;
