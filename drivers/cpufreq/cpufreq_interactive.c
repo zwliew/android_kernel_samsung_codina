@@ -35,10 +35,6 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/cpufreq_interactive.h>
 
-#ifdef CONFIG_HAS_EARLYSUSPEND
-#include <linux/earlysuspend.h>
-#endif
-
 static int active_count;
 
 struct cpufreq_interactive_cpuinfo {
@@ -163,10 +159,6 @@ static bool io_is_busy = true;
 static unsigned int up_threshold_any_cpu_load = 65;
 static unsigned int sync_freq = DEFAULT_SYNC_FREQ;
 static unsigned int up_threshold_any_cpu_freq = 600000;
-
-#ifdef CONFIG_HAS_EARLYSUSPEND
-static struct early_suspend cpufreq_gov_early_suspend;
-#endif
 
 static inline cputime64_t get_cpu_idle_time_jiffy(unsigned int cpu,
 						  cputime64_t *wall)
@@ -1458,20 +1450,6 @@ static void cpufreq_interactive_nop_timer(unsigned long data)
 {
 }
 
-#ifdef CONFIG_HAS_EARLYSUSPEND
-static void cpufreq_gov_suspend(struct early_suspend *h)
-{
-	cpu_down(1);
-	printk("[interactive] screen off hot-unplug!\n");
-}
-
-static void cpufreq_gov_resume(struct early_suspend *h)
-{
-	cpu_up(1);
-	printk("[interactive] screen on hot-plug!\n");
-}
-#endif
-
 static int __init cpufreq_interactive_init(void)
 {
 	unsigned int i;
@@ -1503,14 +1481,6 @@ static int __init cpufreq_interactive_init(void)
 
 	sched_setscheduler_nocheck(speedchange_task, SCHED_FIFO, &param);
 	get_task_struct(speedchange_task);
-
-#ifdef CONFIG_HAS_EARLYSUSPEND
-	cpufreq_gov_early_suspend.level = EARLY_SUSPEND_LEVEL_DISABLE_FB + 2;
-
-	cpufreq_gov_early_suspend.suspend = cpufreq_gov_suspend;
-	cpufreq_gov_early_suspend.resume = cpufreq_gov_resume;
-	register_early_suspend(&cpufreq_gov_early_suspend);
-#endif
 
 	/* NB: wake up so the thread does not look hung to the freezer */
 	wake_up_process(speedchange_task);
