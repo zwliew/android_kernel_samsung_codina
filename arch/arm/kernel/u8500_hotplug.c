@@ -44,9 +44,6 @@ static struct workqueue_struct *wq;
 
 static void u8500_hotplug_function(struct work_struct *work)
 {
-	if (!is_interactive)
-		goto queue;
-
 	unsigned int now = ktime_to_ms(ktime_get());
 
 	if ((now - vars.stored_time) <= 2000 / vars.online_cpus)
