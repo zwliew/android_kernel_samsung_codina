@@ -18,18 +18,22 @@
 
 #include <linux/kernel.h>
 #include <linux/init.h>
-#include <linux/module.h>
 #include <linux/cpu.h>
 #include <linux/workqueue.h>
 #include <linux/sched.h>
 #include <linux/timer.h>
-#include <linux/earlysuspend.h>
 #include <linux/cpufreq.h>
+#include <linux/earlysuspend.h>
 
-#define CPU_UP_LOAD 40
+#define CPU_UP_LOAD 50
+#define CPU_HIGH_LOAD 90
+
 #define MAX_POSSIBLE_CPUS 2
-#define MIN_POSSIBLE_CPUS 1
+
+#define DOWN_TIMER_COUNT 10
+
 #define HOTPLUG_WORK_DELAY msecs_to_jiffies(HZ)
+#define INIT_HOTPLUG_WORK_DELAY (HZ * 20)
 
 struct hotplug_vars
 {
@@ -41,50 +45,60 @@ struct hotplug_vars
 static struct delayed_work hotplug_work;
 static struct workqueue_struct *wq;
 
+static inline void online_cpu1(unsigned long now)
+{
+	cpu_up(1);
+	pr_info("high load - hot-plug.\n");
+
+	vars.hotplug_time = now;
+	vars.online_cpus = num_online_cpus();
+	vars.down_timer = 0;
+}
+
+static inline void offline_cpu1(unsigned long now)
+{
+	cpu_down(1);
+	pr_info("low load - hot-unplug.\n");
+
+	vars.hotplug_time = now;
+	vars.online_cpus = num_online_cpus();
+	vars.down_timer = 0;
+}
+
 static void u8500_hotplug_function(struct work_struct *work)
 {
-	unsigned long now = ktime_to_ms(ktime_get());
+	unsigned int curr_load;
+	unsigned long now;
 
-	if ((now - vars.hotplug_time) < 2000 / vars.online_cpus)
+	curr_load = cpufreq_quick_get_util(0);
+
+	if (curr_load >= CPU_HIGH_LOAD)
+	{
+		cpu_up(1);
+		pr_info("extremely high load - hot-plug.\n");
+	}
+
+	now = ktime_to_us(ktime_get());
+	vars.online_cpus = num_online_cpus();
+
+	if ((now - vars.hotplug_time) < 2000000 / vars.online_cpus)
 		goto queue;
-
-	unsigned int cpu;
-	unsigned int load = 0;
-
-	for_each_online_cpu(cpu)
-		load += cpufreq_quick_get_util(cpu);
-
-	load /= vars.online_cpus;
 
 	vars.down_timer++;
 
-	pr_info("%s: load: %u, online cpus: %u, delay: %u, down timer: %u\n",
-		__func__, load, vars.online_cpus, (now - vars.hotplug_time), vars.down_timer);
+	pr_debug("%s: current load: %u, online cpus: %u, delay: %u, down timer: %u\n",
+		__func__, curr_load, vars.online_cpus, (now - vars.hotplug_time), vars.down_timer);
 
-	if (load >= CPU_UP_LOAD)
+	if (curr_load >= CPU_UP_LOAD &&
+		vars.online_cpus < MAX_POSSIBLE_CPUS)
 	{
-		if (is_interactive)
-		{
-			cpu_up(1);
-			pr_info("high load - hot-plug.\n");
-
-			vars.hotplug_time = now;
-			vars.online_cpus = num_online_cpus();
-			vars.down_timer = 0;
-		}
+		online_cpu1(now);
 	}
 
-	else if (vars.down_timer >= 10)
+	else if (vars.down_timer >= DOWN_TIMER_COUNT &&
+		vars.online_cpus == MAX_POSSIBLE_CPUS)
 	{
-		if (is_interactive)
-		{
-			cpu_down(1);
-			pr_info("low load - hot-unplug.\n");
-
-			vars.hotplug_time = now;
-			vars.online_cpus = num_online_cpus();
-			vars.down_timer = 0;
-		}
+		offline_cpu1(now);
 	}
 
 queue:
@@ -93,13 +107,13 @@ queue:
 
 static void u8500_hotplug_late_resume(struct early_suspend *handler)
 {
-	if (vars.online_cpus == 1)
+	if (vars.online_cpus < MAX_POSSIBLE_CPUS)
 	{
 		cpu_up(1);
 		pr_info("late resume - hot-plug.\n");
 
 		vars.online_cpus = num_online_cpus();
-		vars.hotplug_time = ktime_to_ms(ktime_get());
+		vars.hotplug_time = ktime_to_us(ktime_get());
 		vars.down_timer = 0;
 	}
 
@@ -111,13 +125,13 @@ static void u8500_hotplug_early_suspend(struct early_suspend *handler)
 	flush_workqueue(wq);
 	cancel_delayed_work_sync(&hotplug_work);
 
-	if (vars.online_cpus == 2)
+	if (vars.online_cpus == MAX_POSSIBLE_CPUS)
 	{
 		cpu_down(1);
 		pr_info("early suspend - hot-unplug.\n");
 
 		vars.online_cpus = num_online_cpus();
-		vars.hotplug_time = ktime_to_ms(ktime_get());
+		vars.hotplug_time = ktime_to_us(ktime_get());
 	}
 }
 
@@ -143,7 +157,7 @@ static int u8500_hotplug_init(void)
 
 	INIT_DELAYED_WORK(&hotplug_work, u8500_hotplug_function);
 
-	queue_delayed_work_on(0, wq, &hotplug_work, 2000);
+	queue_delayed_work_on(0, wq, &hotplug_work, INIT_HOTPLUG_WORK_DELAY);
 
 	register_early_suspend(&u8500_hotplug_suspend);
 
