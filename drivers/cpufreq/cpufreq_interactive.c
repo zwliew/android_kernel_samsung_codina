@@ -77,7 +77,7 @@ static unsigned int hispeed_freq = 400000;
 static unsigned long go_hispeed_load = DEFAULT_GO_HISPEED_LOAD;
 
 /* Sampling down factor to be applied to min_sample_time at max freq */
-#define DEFAULT_SAMPLING_DOWN_FACTOR 40000
+#define DEFAULT_SAMPLING_DOWN_FACTOR 60000
 static unsigned int sampling_down_factor = DEFAULT_SAMPLING_DOWN_FACTOR;
 
 /* Target load.  Lower values result in higher CPU speeds. */
@@ -122,8 +122,8 @@ static spinlock_t above_hispeed_delay_lock;
 static unsigned int *above_hispeed_delay = default_above_hispeed_delay;
 static int nabove_hispeed_delay = ARRAY_SIZE(default_above_hispeed_delay);
 
-/* 200ms - 0.2s */
-#define DEFAULT_BOOSTPULSE_DURATION 200000
+/* 350ms - 0.35s */
+#define DEFAULT_BOOSTPULSE_DURATION 350000
 /* Duration of a boot pulse in usecs */
 static int boostpulse_duration_val = DEFAULT_BOOSTPULSE_DURATION;
 
