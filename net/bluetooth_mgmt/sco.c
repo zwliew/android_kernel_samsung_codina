@@ -101,8 +101,8 @@ static struct sco_conn *sco_conn_add(struct hci_conn *hcon, __u8 status)
 	struct sco_conn *conn = hcon->sco_data;
 
 	if (conn || status) {
-//		if (conn && (!conn->hcon))
-//			conn->hcon = hcon;
+		if (conn && (!conn->hcon))
+			conn->hcon = hcon;
 		return conn;
 	}
 
