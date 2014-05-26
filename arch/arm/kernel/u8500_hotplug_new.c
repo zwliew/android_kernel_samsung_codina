@@ -36,7 +36,7 @@
 #define DEFAULT_COUNTER_THRESHOLD 5
 #define DEFAULT_WORK_DELAY 1
 #define DEFAULT_HIGH_LOAD_THRESHOLD 95
-#define DEFAULT_UP_TIMER_THRESHOLD 5
+#define DEFAULT_UP_TIMER_THRESHOLD 10
 
 struct cpu_stats {
 	unsigned int online_cpus;
@@ -44,6 +44,7 @@ struct cpu_stats {
 	unsigned int up_timer;
 } stats = {
 	.counter = 0,
+	.up_timer = 0,
 };
 
 struct hotplug_tunables
@@ -351,6 +352,7 @@ static int __devinit u8500_hotplug_probe(struct platform_device *pdev)
 	t->counter_threshold = DEFAULT_COUNTER_THRESHOLD;
 	t->work_delay = DEFAULT_WORK_DELAY;
 	t->high_load_threshold = DEFAULT_HIGH_LOAD_THRESHOLD;
+	t->up_timer_threshold = DEFAULT_UP_TIMER_THRESHOLD;
 
 	stats.online_cpus = num_online_cpus();
 
