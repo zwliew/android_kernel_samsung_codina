@@ -34,6 +34,7 @@
 
 #define DEFAULT_LOAD_THRESHOLD 50
 #define DEFAULT_COUNTER_THRESHOLD 10
+#define DEFAULT_TIMER 1
 
 struct cpu_stats {
 	unsigned int online_cpus;
@@ -46,6 +47,7 @@ struct hotplug_tunables
 {
 	unsigned int load_threshold;
 	unsigned int counter_threshold;
+	unsigned int timer;
 } tunables;
 
 static struct workqueue_struct *wq;
@@ -61,10 +63,12 @@ static void __ref hotplug_work_fn(struct work_struct *work)
 
 	if (cur_load >= t->load_threshold)
 	{
+		pr_info("u8500_hotplug: high load\n");
 		if (stats.online_cpus < num_possible_cpus())
 		{
 			cpu_up(stats.online_cpus);
 			stats.online_cpus = num_online_cpus();
+			pr_info("u8500_hotplug: high load online\n");
 		}
 		stats.counter = 0;
 	}
@@ -72,10 +76,12 @@ static void __ref hotplug_work_fn(struct work_struct *work)
 	{
 		if (stats.counter >= t->counter_threshold)
 		{
+			pr_info("u8500_hotplug: low load\n");
 			if (stats.online_cpus == num_possible_cpus())
 			{
 				cpu_down(stats.online_cpus - 1);
 				stats.online_cpus = num_online_cpus();
+				pr_info("u8500_hotplug: low load offline\n");
 			}
 			stats.counter = 0;
 		} else
@@ -83,7 +89,7 @@ static void __ref hotplug_work_fn(struct work_struct *work)
 	}
 
 	queue_delayed_work_on(0, wq, &hotplug_work,
-		msecs_to_jiffies(HZ));
+		msecs_to_jiffies(t->timer * HZ));
 }
 
 static void u8500_hotplug_suspend(struct work_struct *work)
@@ -189,13 +195,40 @@ static ssize_t counter_threshold_store(struct device *dev,
 	return size;
 }
 
+static ssize_t timer_show(struct device *dev, struct device_attribute *attr,
+		char *buf)
+{
+	struct hotplug_tunables *t = &tunables;
+
+	return sprintf(buf, "%u\n", t->timer);
+}
+
+static ssize_t timer_store(struct device *dev, struct device_attribute *attr,
+		const char *buf, size_t size)
+{
+	struct hotplug_tunables *t = &tunables;
+
+	unsigned int new_val;
+
+	sscanf(buf, "%u", &new_val);
+
+	if (new_val != t->timer && new_val >= 0 && new_val <= 100)
+	{
+		t->timer = new_val;
+	}
+
+	return size;
+}
+
 static DEVICE_ATTR(load_threshold, 0664, load_threshold_show, load_threshold_store);
 static DEVICE_ATTR(counter_threshold, 0664, counter_threshold_show, counter_threshold_store);
+static DEVICE_ATTR(timer, 0664, timer_show, timer_store);
 
 static struct attribute *u8500_hotplug_control_attributes[] =
 {
 	&dev_attr_load_threshold.attr,
 	&dev_attr_counter_threshold.attr,
+	&dev_attr_timer.attr,
 	NULL
 };
 
@@ -225,6 +258,7 @@ static int __devinit u8500_hotplug_probe(struct platform_device *pdev)
 
 	t->load_threshold = DEFAULT_LOAD_THRESHOLD;
 	t->counter_threshold = DEFAULT_COUNTER_THRESHOLD;
+	t->timer = DEFAULT_TIMER;
 
 	stats.online_cpus = num_online_cpus();
 
