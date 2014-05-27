@@ -38,6 +38,8 @@
 #define DEFAULT_HIGH_LOAD_THRESHOLD 95
 #define DEFAULT_UP_TIMER_THRESHOLD 10
 
+extern bool boosted;
+
 struct cpu_stats {
 	unsigned int online_cpus;
 	unsigned int counter;
