@@ -51,16 +51,75 @@ struct cpu_stats {
 
 struct hotplug_tunables
 {
-	unsigned int load_threshold;
-	unsigned int counter_threshold;
-	unsigned int work_delay;
-	unsigned int high_load_threshold;
-	unsigned int up_timer_threshold;
+	unsigned int load_threshold; /* cpu load at which cpu1 goes online */
+	unsigned int counter_threshold; /* time to wait before cpu1 goes offlines */
+	unsigned int work_delay; /* frequency at which the driver polls for cpu load and hotplugs */
+	unsigned int high_load_threshold; /* cpu load at which cpu1 always go online no matter what */
+	unsigned int up_timer_threshold; /* time to wait before onlining cpu1 */
 } tunables;
 
 static struct workqueue_struct *wq;
 static struct delayed_work hotplug_work;
 static struct work_struct suspend, resume;
+
+static void online_one(unsigned int load)
+{
+	struct hotplug_tunables *t = &tunables;
+
+	if (load >= t->high_load_threshold)
+	{
+		pr_debug("u8500_hotplug: extreme high load\n");
+
+		if (stats.online_cpus < num_possible_cpus())
+		{
+			cpu_up(stats.online_cpus);
+			stats.online_cpus = num_online_cpus();
+
+			pr_debug("u8500_hotplug: extreme high load online\n");
+		}
+
+		stats.up_timer = 0;
+	}
+	else if (stats.up_timer >= t->up_timer_threshold)
+	{
+		pr_debug("u8500_hotplug: high load\n");
+
+		if (stats.online_cpus < num_possible_cpus())
+		{
+			cpu_up(stats.online_cpus);
+			stats.online_cpus = num_online_cpus();
+
+			pr_debug("u8500_hotplug: high load online\n");
+		}
+
+		stats.up_timer = 0;
+	}
+
+	stats.counter = 0;
+}
+
+static void offline_one(void)
+{
+	struct hotplug_tunables *t = &tunables;
+
+	if (stats.counter >= t->counter_threshold)
+	{
+		pr_debug("u8500_hotplug: low load\n");
+
+		if (stats.online_cpus == num_possible_cpus())
+		{
+			cpu_down(stats.online_cpus - 1);
+			stats.online_cpus = num_online_cpus();
+
+			pr_debug("u8500_hotplug: low load offline\n");
+		}
+
+		stats.counter = 0;
+		stats.up_timer = 0;
+	}
+
+	stats.counter++;
+}
 
 static void __ref hotplug_work_fn(struct work_struct *work)
 {
@@ -73,57 +132,11 @@ static void __ref hotplug_work_fn(struct work_struct *work)
 
 	if (cur_load >= t->load_threshold)
 	{
-		if (cur_load >= t->high_load_threshold)
-		{
-			pr_info("u8500_hotplug: extreme high load\n");
-
-			if (stats.online_cpus < num_possible_cpus())
-			{
-				cpu_up(stats.online_cpus);
-				stats.online_cpus = num_online_cpus();
-
-				pr_info("u8500_hotplug: extreme high load online\n");
-			}
-
-			stats.up_timer = 0;
-		}
-
-		else if (stats.up_timer >= t->up_timer_threshold)
-		{
-			pr_info("u8500_hotplug: high load\n");
-
-			if (stats.online_cpus < num_possible_cpus())
-			{
-				cpu_up(stats.online_cpus);
-				stats.online_cpus = num_online_cpus();
-
-				pr_info("u8500_hotplug: high load online\n");
-			}
-
-			stats.up_timer = 0;
-		}
-
-		stats.counter = 0;
+		online_one(cur_load);
 	}
 	else
 	{
-		if (stats.counter >= t->counter_threshold)
-		{
-			pr_info("u8500_hotplug: low load\n");
-
-			if (stats.online_cpus == num_possible_cpus())
-			{
-				cpu_down(stats.online_cpus - 1);
-				stats.online_cpus = num_online_cpus();
-
-				pr_info("u8500_hotplug: low load offline\n");
-			}
-
-			stats.counter = 0;
-			stats.up_timer = 0;
-		}
-
-		stats.counter++;
+		offline_one();
 	}
 
 	queue_delayed_work_on(0, wq, &hotplug_work,
@@ -185,6 +198,7 @@ static struct early_suspend early_suspend =
 	.resume = u8500_hotplug_late_resume,
 };
 
+/* tunables userspace start */
 static ssize_t load_threshold_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
@@ -325,6 +339,8 @@ static struct attribute *u8500_hotplug_control_attributes[] =
 	&dev_attr_up_timer_threshold.attr,
 	NULL
 };
+
+/* tunables userspace end */
 
 static struct attribute_group u8500_hotplug_control_group =
 {
