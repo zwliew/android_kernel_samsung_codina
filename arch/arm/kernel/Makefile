@@ -16,7 +16,7 @@ CFLAGS_REMOVE_return_address.o = -pg
 obj-y		:= elf.o entry-armv.o entry-common.o irq.o \
 		   process.o ptrace.o return_address.o setup.o signal.o \
 		   sys_arm.o stacktrace.o time.o traps.o \
-		   u8500_hotplug_new.o
+		   u8500_hotplug.o
 
 obj-$(CONFIG_DEPRECATED_PARAM_STRUCT) += compat.o
 
