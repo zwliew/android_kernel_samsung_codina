@@ -225,13 +225,8 @@ SYSCALL_DEFINE1(syncfs, int, fd)
 	int ret;
 	int fput_needed;
 
-	if (fsync_mode > 0) {
-		if (fsync_mode == 1) {
-			return 0;
-		} else if ((fsync_mode == 2) && !is_suspend) {
-			return 0;
-		}
-	}
+	if (unlikely(((fsync_mode == 2) && !is_suspend) || fsync_mode == 1))
+		return 0;
 
 	file = fget_light(fd, &fput_needed);
 	if (!file)
@@ -262,13 +257,8 @@ int vfs_fsync_range(struct file *file, loff_t start, loff_t end, int datasync)
 	struct address_space *mapping = file->f_mapping;
 	int err, ret;
 
-	if (fsync_mode > 0) {
-		if (fsync_mode == 1) {
-			return 0;
-		} else if ((fsync_mode == 2) && !is_suspend) {
-			return 0;
-		}
-	}
+	if (unlikely(((fsync_mode == 2) && !is_suspend) || fsync_mode == 1))
+		return 0;
 
 	if (!file->f_op || !file->f_op->fsync) {
 		ret = -EINVAL;
@@ -302,13 +292,8 @@ EXPORT_SYMBOL(vfs_fsync_range);
  */
 int vfs_fsync(struct file *file, int datasync)
 {
-	if (fsync_mode > 0) {
-		if (fsync_mode == 1) {
-			return 0;
-		} else if ((fsync_mode == 2) && !is_suspend) {
-			return 0;
-		}
-	}
+	if (unlikely(((fsync_mode == 2) && !is_suspend) || fsync_mode == 1))
+		return 0;
 
 	return vfs_fsync_range(file, 0, LLONG_MAX, datasync);
 }
@@ -378,13 +363,8 @@ static int do_fsync(unsigned int fd, int datasync)
 	struct fsync_work *fwork;
 #endif
 
-	if (fsync_mode > 0) {
-		if (fsync_mode == 1) {
-			return 0;
-		} else if ((fsync_mode == 2) && !is_suspend) {
-			return 0;
-		}
-	}
+	if (unlikely(((fsync_mode == 2) && !is_suspend) || fsync_mode == 1))
+		return 0;
 
 	file = fget_light(fd, &fput_needed);
 	if (file) {
@@ -433,26 +413,16 @@ no_async:
 
 SYSCALL_DEFINE1(fsync, unsigned int, fd)
 {
-	if (fsync_mode > 0) {
-		if (fsync_mode == 1) {
-			return 0;
-		} else if ((fsync_mode == 2) && !is_suspend) {
-			return 0;
-		}
-	}
+	if (unlikely(((fsync_mode == 2) && !is_suspend) || fsync_mode == 1))
+		return 0;
 
 	return do_fsync(fd, 0);
 }
 
 SYSCALL_DEFINE1(fdatasync, unsigned int, fd)
 {
-	if (fsync_mode > 0) {
-		if (fsync_mode == 1) {
-			return 0;
-		} else if ((fsync_mode == 2) && !is_suspend) {
-			return 0;
-		}
-	}
+	if (unlikely(((fsync_mode == 2) && !is_suspend) || fsync_mode == 1))
+		return 0;
 
 	return do_fsync(fd, 1);
 }
@@ -467,13 +437,8 @@ SYSCALL_DEFINE1(fdatasync, unsigned int, fd)
  */
 int generic_write_sync(struct file *file, loff_t pos, loff_t count)
 {
-	if (fsync_mode > 0) {
-		if (fsync_mode == 1) {
-			return 0;
-		} else if ((fsync_mode == 2) && !is_suspend) {
-			return 0;
-		}
-	}
+	if (unlikely(((fsync_mode == 2) && !is_suspend) || fsync_mode == 1))
+		return 0;
 
 	if (!(file->f_flags & O_DSYNC) && !IS_SYNC(file->f_mapping->host))
 		return 0;
@@ -539,13 +504,8 @@ SYSCALL_DEFINE(sync_file_range)(int fd, loff_t offset, loff_t nbytes,
 	int fput_needed;
 	umode_t i_mode;
 
-	if (fsync_mode > 0) {
-		if (fsync_mode == 1) {
-			return 0;
-		} else if ((fsync_mode == 2) && !is_suspend) {
-			return 0;
-		}
-	}
+	if (unlikely(((fsync_mode == 2) && !is_suspend) || fsync_mode == 1))
+		return 0;
 
 	ret = -EINVAL;
 	if (flags & ~VALID_FLAGS)
@@ -654,7 +614,7 @@ static void fsync_early_suspend(struct early_suspend *h)
 	is_suspend = true;
 
 	/* Do fsync */
-	if (fsync_mode == 2) {
+	if (unlikely(fsync_mode == 2)) {
 		pr_info("[FSYNC] Dynamic fsync syncing\n");
 		wakeup_flusher_threads(0);
 		sync_filesystems(0);
