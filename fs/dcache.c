@@ -77,7 +77,7 @@
  *   dentry1->d_lock
  *     dentry2->d_lock
  */
-int sysctl_vfs_cache_pressure = 100;
+int sysctl_vfs_cache_pressure __read_mostly = 100;
 EXPORT_SYMBOL_GPL(sysctl_vfs_cache_pressure);
 
 static __cacheline_aligned_in_smp DEFINE_SPINLOCK(dcache_lru_lock);
@@ -3033,7 +3033,7 @@ EXPORT_SYMBOL(find_inode_number);
 
 static void cpressure_early_suspend(struct early_suspend *handler)
 {
-	sysctl_vfs_cache_pressure = 50;
+	sysctl_vfs_cache_pressure = 10;
 }
 
 static void cpressure_late_resume(struct early_suspend *handler)
