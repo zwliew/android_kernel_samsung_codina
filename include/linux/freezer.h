@@ -173,6 +173,13 @@ static inline void set_freezable_with_signal(void)
 	current->flags &= ~(PF_NOFREEZE | PF_FREEZER_NOSIG);
 }
 
+#define freezable_schedule()						\
+({									\
+	freezer_do_not_count();						\
+	schedule();							\
+	freezer_count();						\
+})
+
 /*
  * Freezer-friendly wrappers around wait_event_interruptible() and
  * wait_event_interruptible_timeout(), originally defined in <linux/wait.h>
@@ -226,7 +233,9 @@ static inline int freezer_should_skip(struct task_struct *p) { return 0; }
 static inline void set_freezable(void) {}
 static inline void set_freezable_with_signal(void) {}
 
-#define freezable_schedule_timeout(timeout)  schedule_timeout(timeout)
+#define freezable_schedule()  schedule()
+
+#define freezable_schedule_timeout(timeout)  schedule_timeout(timeout)		\
 
 #define freezable_schedule_timeout_interruptible(timeout)		\
 	schedule_timeout_interruptible(timeout)
