@@ -19,6 +19,7 @@
 #include <linux/cpu.h>
 #include <linux/cpumask.h>
 #include <linux/cpufreq.h>
+#include <linux/earlysuspend.h>
 #include <linux/module.h>
 #include <linux/moduleparam.h>
 #include <linux/rwsem.h>
@@ -146,6 +147,8 @@ static bool io_is_busy;
 static unsigned int up_threshold_any_cpu_load;
 static unsigned int sync_freq;
 static unsigned int up_threshold_any_cpu_freq;
+
+static struct early_suspend cpufreq_interactive_early_suspend;
 
 static inline cputime64_t get_cpu_idle_time_jiffy(unsigned int cpu,
 							cputime64_t *wall)
@@ -1497,6 +1500,18 @@ static void cpufreq_interactive_nop_timer(unsigned long data)
 {
 }
 
+static void cpufreq_interactive_suspend(struct early_suspend *h)
+{
+	cpu_down(1);
+	printk("[interactive] screen off hot-unplug!\n");
+}
+
+static void cpufreq_interactive_resume(struct early_suspend *h)
+{
+	cpu_up(1);
+	printk("[interactive] screen on hot-plug!\n");
+}
+
 static int __init cpufreq_interactive_init(void)
 {
 	unsigned int i;
@@ -1528,6 +1543,12 @@ static int __init cpufreq_interactive_init(void)
 
 	sched_setscheduler_nocheck(speedchange_task, SCHED_FIFO, &param);
 	get_task_struct(speedchange_task);
+
+	cpufreq_interactive_early_suspend.level = EARLY_SUSPEND_LEVEL_DISABLE_FB;
+	cpufreq_interactive_early_suspend.suspend = cpufreq_interactive_suspend;
+	cpufreq_interactive_early_suspend.resume = cpufreq_interactive_resume;
+
+	register_early_suspend(&cpufreq_interactive_early_suspend);
 
 	/* NB: wake up so the thread does not look hung to the freezer */
 	wake_up_process(speedchange_task);
