@@ -133,6 +133,10 @@ static u64 boostpulse_endtime;
 
 static int input_boost_val;
 
+/* Speed to bump to when input boosted */
+#define DEFAULT_INPUT_BOOST_FREQ 400000
+static int input_boost_freq = DEFAULT_INPUT_BOOST_FREQ;
+
 struct cpufreq_interactive_inputopen {
 	struct input_handle *handle;
 	struct work_struct inputopen_work;
@@ -760,8 +764,8 @@ static void cpufreq_interactive_boost(void)
 	for_each_online_cpu(i) {
 		pcpu = &per_cpu(cpuinfo, i);
 		spin_lock_irqsave(&pcpu->target_freq_lock, flags[1]);
-		if (pcpu->target_freq < hispeed_freq) {
-			pcpu->target_freq = hispeed_freq;
+		if (pcpu->target_freq < input_boost_freq) {
+			pcpu->target_freq = input_boost_freq;
 			cpumask_set_cpu(i, &speedchange_cpumask);
 			pcpu->hispeed_validate_time =
 				ktime_to_us(ktime_get());
@@ -773,7 +777,7 @@ static void cpufreq_interactive_boost(void)
 		 * validated.
 		 */
 
-		pcpu->floor_freq = hispeed_freq;
+		pcpu->floor_freq = input_boost_freq;
 		pcpu->floor_validate_time = ktime_to_us(ktime_get());
 		spin_unlock_irqrestore(&pcpu->target_freq_lock, flags[1]);
 	}
