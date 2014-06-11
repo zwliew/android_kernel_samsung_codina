@@ -131,7 +131,7 @@ static u64 boostpulse_endtime;
  * Boost pulse to hispeed on touchscreen input.
  */
 
-static int input_boost_val;
+static int input_boost_val = 1;
 
 /* Speed to bump to when input boosted */
 #define DEFAULT_INPUT_BOOST_FREQ 400000
