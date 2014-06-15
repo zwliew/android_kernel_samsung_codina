@@ -1480,6 +1480,30 @@ static struct global_attr input_boost_freq_attr =
 		__ATTR(input_boost_freq, 0644,
 		show_input_boost_freq,
 				store_input_boost_freq);
+				
+static ssize_t show_screen_off_max_freq(struct kobject *kobj,
+			struct attribute *attr, char *buf)
+{
+	return snprintf(buf, PAGE_SIZE, "%u\n", screen_off_max_freq);
+}
+
+static ssize_t store_screen_off_max_freq(struct kobject *kobj,
+			struct attribute *attr, const char *buf, size_t count)
+{
+	int ret;
+	unsigned long val;
+
+	ret = kstrtoul(buf, 0, &val);
+	if (ret < 0)
+		return ret;
+	screen_off_max_freq = val;
+	return count;
+}
+
+static struct global_attr screen_off_max_freq_attr =
+		__ATTR(screen_off_max_freq, 0644,
+		show_screen_off_max_freq,
+				store_screen_off_max_freq);
 
 static struct attribute *interactive_attributes[] = {
 	&target_loads_attr.attr,
@@ -1499,6 +1523,7 @@ static struct attribute *interactive_attributes[] = {
 	&up_threshold_any_cpu_load_attr.attr,
 	&up_threshold_any_cpu_freq_attr.attr,
 	&input_boost_freq_attr.attr,
+	&screen_off_max_freq_attr.attr,
 	NULL,
 };
 
