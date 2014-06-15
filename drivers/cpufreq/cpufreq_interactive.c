@@ -899,6 +899,7 @@ static void cpufreq_interactive_input_event(struct input_handle *handle,
 					    unsigned int code, int value)
 {
 	if (input_boost_val && type == EV_SYN && code == SYN_REPORT) {
+		boostpulse_endtime = ktime_to_us(ktime_get()) + boostpulse_duration_val;
 		trace_cpufreq_interactive_boost("input");
 		cpufreq_interactive_boost();
 	}
