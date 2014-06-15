@@ -173,6 +173,11 @@ static unsigned int up_threshold_any_cpu_load = DEFAULT_UP_THRESHOLD_ANY_CPU_LOA
 static unsigned int sync_freq = DEFAULT_SYNC_FREQ;
 static unsigned int up_threshold_any_cpu_freq = DEFAULT_UP_THRESHOLD_ANY_CPU_FREQ;
 
+/* Maximum frequency CPUs can bump to during screen off */
+#define DEFAULT_SCREEN_OFF_MAX_FREQ 400000
+static unsigned int screen_off_max_freq = DEFAULT_SCREEN_OFF_MAX_FREQ;
+static bool is_screen_off;
+
 static struct early_suspend cpufreq_interactive_early_suspend;
 
 static inline cputime64_t get_cpu_idle_time_jiffy(unsigned int cpu,
@@ -538,6 +543,11 @@ static void cpufreq_interactive_timer(unsigned long data)
 	if (boosted) {
 		if (new_freq < input_boost_freq)
 			new_freq = input_boost_freq;
+	}
+
+	if (is_screen_off) {
+		if (new_freq > screen_off_max_freq)
+			new_freq = screen_off_max_freq;
 	}
 
 	pcpu->timer_rate = freq_to_timer_rate(new_freq);
@@ -1679,12 +1689,16 @@ static void cpufreq_interactive_suspend(struct early_suspend *h)
 {
 	cpu_down(1);
 	printk("[interactive] screen off hot-unplug!\n");
+	is_screen_off = true;
+	printk("[interactive] screen off max freq capped!\n");
 }
 
 static void cpufreq_interactive_resume(struct early_suspend *h)
 {
 	cpu_up(1);
 	printk("[interactive] screen on hot-plug!\n");
+	is_screen_off = false;
+	printk("[interactive] screen on max freq uncapped!\n");
 }
 
 static int __init cpufreq_interactive_init(void)
