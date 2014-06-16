@@ -153,7 +153,6 @@ static void accsns_poll(struct input_dev *idev)
 			input_report_abs(idev, EVENT_TYPE_ACCEL_X, xyz[0]);
 			input_report_abs(idev, EVENT_TYPE_ACCEL_Y, xyz[1]);
 			input_report_abs(idev, EVENT_TYPE_ACCEL_Z, xyz[2]);
-			idev->sync = 0;
 			input_event(idev, EV_SYN, SYN_REPORT, 1);
 		}
 
@@ -165,7 +164,6 @@ static void accsns_poll(struct input_dev *idev)
 			input_report_abs(idev, EVENT_TYPE_ACCEL_X, xyz[0]);
 			input_report_abs(idev, EVENT_TYPE_ACCEL_Y, xyz[1]);
 			input_report_abs(idev, EVENT_TYPE_ACCEL_Z, xyz[2]);
-			idev->sync = 0;
 			input_event(idev, EV_SYN, SYN_REPORT, 1);
 		}
 	}
@@ -179,7 +177,6 @@ static void hscd_poll(struct input_dev *idev)
 		input_report_abs(idev, EVENT_TYPE_MAGV_X, xyz[0]);
 		input_report_abs(idev, EVENT_TYPE_MAGV_Y, xyz[1]);
 		input_report_abs(idev, EVENT_TYPE_MAGV_Z, xyz[2]);
-		idev->sync = 0;
 		input_event(idev, EV_SYN, SYN_REPORT, 2);
 	}
 }
