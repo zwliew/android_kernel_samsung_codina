@@ -304,3 +304,10 @@ config SUSPEND_TIME
 
 config DVFS_LIMIT
 	bool "DVFS frequency limitation feature"
+
+config SPEEDUP_KEYRESUME
+	bool "Speed up late resume"
+	depends on SUSPEND
+	default y
+	---help---
+	  Speed up system resume
